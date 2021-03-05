@@ -11,7 +11,7 @@ export class AppController {
   constructor(
     private cookiesService: CookiesServices,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   @UseGuards(LoginGuard)
   @Post('login')
@@ -19,11 +19,18 @@ export class AppController {
     const isProduction =
       this.configService.get<string>('NODE_ENV)') === 'production';
 
-    const cookiesOptions = isProduction
-      ? this.cookiesService.getCookiesOptionBasedOnUserAgent(
-          req.headers['user-agent'],
-        )
-      : { httpOnly: true };
+    let cookiesOptions: CookieOptions
+    if (isProduction) {
+      if (!req.headers['user-agent']) {
+        throw new Error("Expecting user-agent header to be set");
+      }
+      cookiesOptions = this.cookiesService.getCookiesOptionBasedOnUserAgent(
+        req.headers['user-agent'],
+      )
+    }
+    else {
+      cookiesOptions = { httpOnly: true }
+    }
 
     res.cookie('auth', req.user, cookiesOptions);
 
